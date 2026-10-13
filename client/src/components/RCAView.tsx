@@ -61,6 +61,8 @@ export function RCAView({ nodes, edges: _edges, selectedProject, embedded = fals
   };
   const cap = (v: string | undefined) => (v ? v.charAt(0) + v.slice(1).toLowerCase() : '');
   const confTone = (c: string) => (c === 'HIGH' ? 'var(--color-text-main)' : c === 'MEDIUM' ? 'var(--color-degraded)' : 'var(--color-text-muted)');
+  // Scores are z-scores on each service's own noise scale (core/algo.py), not 0..1 probabilities: show the number itself.
+  const fmtScore = (v: number) => (v >= 100 ? v.toFixed(0) : v >= 10 ? v.toFixed(1) : v.toFixed(2));
   const maxScore = activeIncident ? Math.max(...activeIncident.candidateCauses.map(c => c.score), 0.0001) : 1;
   const root = activeIncident?.candidateCauses[0];
 
@@ -189,7 +191,7 @@ export function RCAView({ nodes, edges: _edges, selectedProject, embedded = fals
                         <div style={{ width: `${Math.max(2, (candidate.score / maxScore) * 100)}%`, height: '100%', borderRadius: 2,
                           background: idx === 0 ? 'var(--color-critical)' : '#9aa3b0', transition: 'width var(--transition-normal)' }} />
                       </div>
-                      <span style={{ textAlign: 'right', fontSize: 13, fontWeight: 550, fontVariantNumeric: 'tabular-nums' }}>{(candidate.score * 100).toFixed(0)}%</span>
+                      <span style={{ textAlign: 'right', fontSize: 13, fontWeight: 550, fontVariantNumeric: 'tabular-nums' }}>{fmtScore(candidate.score)}</span>
                     </div>
                   );
                 })}

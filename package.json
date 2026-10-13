@@ -14,7 +14,11 @@
     "test": "node server/node_modules/tsx/dist/cli.mjs --test \"tests/*.test.ts\"",
     "setup": "npm run install:all && npm run doctor",
     "doctor": "node scripts/doctor.mjs",
-    "start": "npm run dev"
+    "start": "npm run dev",
+    "core": "python3 -m core",
+    "dev:core": "concurrently -n server,client,core -c blue,green,magenta \"npm run server\" \"npm run client\" \"npm run core\"",
+    "test:core": "python3 -m pytest core/tests -q",
+    "evaluate": "python3 -m core.evaluation"
   },
   "devDependencies": {
     "concurrently": "^9.1.0"

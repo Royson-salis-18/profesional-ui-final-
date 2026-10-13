@@ -1,0 +1,8 @@
+{
+  "my-target": {
+    "ec2PublicIp": "<public IP of the EC2 instance>",
+    "sshKeyPath": "~/Downloads/<your-key>.pem",
+    "sshUsername": "ubuntu",
+    "displayName": "my-target"
+  }
+}

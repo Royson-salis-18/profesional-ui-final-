@@ -14,6 +14,7 @@ import type { TrafficController } from '../traffic/TrafficController.js';
 import type { ExperimentManager } from '../traffic/ExperimentManager.js';
 import { loadThresholds, saveThresholds, thresholdLimits, DEFAULT_THRESHOLDS, THRESHOLD_DOCS } from '../rca/thresholds.js';
 import { tailCsvLines, readCsvHeader, fieldAt } from '../util/tailCsv.js';
+import { coreAnalysis, coreProxy } from '../rca/CoreBridge.js';
 
 /**
  * Normalises the load knobs that arrive from the UI as strings or nulls.
@@ -215,9 +216,20 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
   });
 
 
+  // Evaluation evidence (bench table, real-crash replay) and core health, served by the Python core.
+  router.get(/^\/core(\/.*)?$/, async (req, res) => {
+    const [status, body] = await coreProxy((req.params as any)[0] ?? '');
+    res.status(status).json(body);
+  });
+
   // --- RCA INCIDENT API ENDPOINTS ---
-  router.get('/incidents', (req, res) => {
+  router.get('/incidents', async (req, res) => {
     const targetId = req.query.targetId as string;
+    // The core (Python, measured algorithms) answers when it can judge the target; otherwise the rule-based manager below does.
+    const core = await coreAnalysis();
+    if (core && (targetId ? core.ready[targetId] : Object.values(core.ready).some(Boolean))) {
+      return res.json(targetId ? core.incidents.filter(i => i.targetId === targetId) : core.incidents);
+    }
     if (!incidentManager) return res.json([]);
     if (targetId) {
       const incident = incidentManager.getIncidentForTarget(targetId);
@@ -601,8 +613,8 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
   });
 
   // --- ML PIPELINE STATUS (ml/collector.py, preprocess.py, train.py, score.py) ---
-  const mlDataDir = path.resolve(process.cwd(), '..', 'ml', 'data');
-  const mlModelsDir = path.resolve(process.cwd(), '..', 'ml', 'models');
+  const mlDataDir = path.resolve(process.cwd(), '..', 'core', 'ml', 'data');
+  const mlModelsDir = path.resolve(process.cwd(), '..', 'core', 'ml', 'models');
 
   const readJsonSafe = (filePath: string): any => {
     try {
@@ -622,8 +634,8 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
     });
   });
 
-  const mlConfigPath = path.resolve(process.cwd(), '..', 'ml', 'config.json');
-  const mlDir = path.resolve(process.cwd(), '..', 'ml');
+  const mlConfigPath = path.resolve(process.cwd(), '..', 'core', 'ml', 'config.json');
+  const mlDir = path.resolve(process.cwd(), '..', 'core', 'ml');
 
   router.get('/ml/config', (_req, res) => {
     res.json(readJsonSafe(mlConfigPath) || {});
@@ -679,7 +691,7 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
   // live or frozen. The server supervises them here, and also detects
   // instances started outside it so the reported state is the truth rather
   // than just "what this server launched".
-  const mlLogsDir = path.resolve(process.cwd(), '..', 'ml', 'logs');
+  const mlLogsDir = path.resolve(process.cwd(), '..', 'core', 'ml', 'logs');
   type MlProcName = 'collector' | 'scorer';
   const ML_PROC_SCRIPTS: Record<MlProcName, string> = { collector: 'collector.py', scorer: 'score.py' };
   const managedMlProcs = new Map<MlProcName, { child: ReturnType<typeof spawn>; startedAt: string }>();

@@ -1,0 +1,923 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>rca-lab</title>
+<style>
+  :root {
+    --bg: #0f0f11; --card: #18181b; --card-2: #1f1f23; --hover: #232328; --line: #ffffff10; --line-2: #ffffff1c;
+    --text: #e4e4e7; --strong: #fafafa; --muted: #a1a1aa; --dim: #71717a;
+    --accent: #7c7cf8; --accent-2: #6366f1; --accent-dim: #7c7cf826;
+    --red: #f87171; --red-bg: #f8717124; --amber: #fbbf24; --amber-bg: #fbbf2420; --green: #4ade80; --green-bg: #4ade801c; --cyan: #67c7e8; --cyan-bg: #67c7e822;
+    --font: Inter, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    --r: 12px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--bg); color: var(--text); font: 14px/1.5 var(--font); -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums; }
+  button, select, input, textarea { font: inherit; color: inherit; }
+  .muted { color: var(--muted); } .dim { color: var(--dim); } .spacer { flex: 1; }
+
+  /* ---------- controls ---------- */
+  .btn { height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--card-2); cursor: pointer;
+         display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; font-size: 13.5px; font-weight: 500; transition: background .15s, border-color .15s; }
+  .btn:hover { background: var(--hover); border-color: #ffffff30; }
+  a.btn { color: var(--text); text-decoration: none; }
+  .btn.primary { background: var(--accent-2); border-color: var(--accent-2); color: #fff; }
+  .btn.primary:hover { background: #7577f5; }
+  .btn.ghost { background: transparent; border-color: transparent; color: var(--muted); } .btn.ghost:hover { color: var(--text); background: var(--hover); }
+  .btn.sm { height: 28px; padding: 0 11px; font-size: 12.5px; }
+  .btn:disabled { opacity: .45; cursor: default; }
+  .tabs { display: inline-flex; gap: 2px; padding: 3px; background: var(--card); border: 1px solid var(--line); border-radius: 999px; }
+  .tabs button { border: 0; background: transparent; color: var(--muted); padding: 5px 14px; border-radius: 999px; cursor: pointer; font-size: 13.5px; font-weight: 500; }
+  .tabs button.on { background: var(--hover); color: var(--strong); }
+  .pill-select { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 6px 0 14px; border-radius: 999px; border: 1px solid var(--line-2);
+                 background: var(--card-2); font-size: 13px; color: var(--muted); }
+  .pill-select select { background: transparent; border: 0; color: var(--strong); font-weight: 500; padding: 0 4px; height: 30px; cursor: pointer; outline: none; }
+  .pill-select select option { background: var(--card); }
+  .pill-select input[type=range] { accent-color: var(--accent); width: 90px; }
+  .pill-select b { color: var(--strong); font-weight: 600; min-width: 26px; padding-right: 8px; }
+
+  /* ---------- top nav ---------- */
+  nav { position: sticky; top: 0; z-index: 5; background: #0f0f11e6; backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  nav .in { max-width: 1440px; margin: 0 auto; height: 60px; padding: 0 28px; display: flex; align-items: center; gap: 14px; }
+  .logo { white-space: nowrap; display: flex; align-items: center; gap: 9px; font-weight: 650; font-size: 15px; color: var(--strong); letter-spacing: -.01em; margin-right: 8px; }
+  .logo svg { display: block; }
+  .projbtn { display: inline-flex; align-items: center; gap: 9px; height: 36px; padding: 0 12px 0 12px; border-radius: 10px; border: 1px solid var(--line-2);
+             background: var(--card); cursor: pointer; max-width: 360px; }
+  .projbtn:hover { background: var(--card-2); }
+  .projbtn .pn { font-weight: 600; color: var(--strong); }
+  .projbtn .ph { color: var(--dim); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .projbtn svg { color: var(--dim); flex: none; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--dim); display: inline-block; }
+  .dot.ok { background: var(--green); box-shadow: 0 0 0 3px var(--green-bg); } .dot.bad { background: var(--red); box-shadow: 0 0 0 3px var(--red-bg); }
+  .dot.wait { background: var(--amber); animation: blink 1s infinite alternate; } @keyframes blink { to { opacity: .35; } }
+  .status { white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 12px; border-radius: 999px; font-size: 13px; font-weight: 500;
+            color: var(--muted); background: var(--card); border: 1px solid var(--line); }
+  .status.inc { color: #fecaca; background: var(--red-bg); border-color: #f8717140; } .status.inc .dot { background: var(--red); box-shadow: 0 0 0 3px #f8717130; animation: blink 1.2s infinite alternate; }
+  .status.past { color: #fde68a; background: var(--amber-bg); border-color: #fbbf2440; } .status.past .dot { background: var(--amber); box-shadow: none; }
+  .status.ok { color: #bbf7d0; background: var(--green-bg); border-color: #4ade8040; } .status.ok .dot { background: var(--green); box-shadow: none; }
+
+  /* ---------- page ---------- */
+  .page { max-width: 1440px; margin: 0 auto; padding: 26px 28px 48px; display: grid; gap: 18px; }
+  .phead { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+  .phead h1 { margin: 0; font-size: 24px; font-weight: 650; letter-spacing: -.02em; color: var(--strong); }
+  .phead .sub { color: var(--muted); font-size: 13.5px; margin-top: 3px; }
+  .phead .ctrls { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); min-width: 0; }
+  .card-h { display: flex; align-items: center; gap: 12px; padding: 16px 20px 0; }
+  .card-h h2 { margin: 0; font-size: 15px; font-weight: 600; color: var(--strong); }
+  .card-h .note { font-size: 12.5px; color: var(--dim); }
+
+  /* hero: the answer first */
+  #hero { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 2fr); }
+  .answer { padding: 22px 24px; border-right: 1px solid var(--line); }
+  .answer .lbl { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+  .answer .big { font-size: 34px; font-weight: 650; letter-spacing: -.025em; color: var(--strong); margin: 6px 0 8px; line-height: 1.15; word-break: break-word; }
+  .answer .big.quiet { color: var(--muted); font-size: 26px; }
+  .answer p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.6; max-width: 560px; }
+  .answer p b { color: var(--text); font-weight: 600; }
+  .conf { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
+  .conf.hi { color: #bbf7d0; background: var(--green-bg); } .conf.mid { color: #fde68a; background: var(--amber-bg); } .conf.lo { color: #fecaca; background: var(--red-bg); }
+  .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .stat { padding: 22px 22px; border-right: 1px solid var(--line); }
+  .stat:last-child { border-right: 0; }
+  .stat .lbl { font-size: 13px; color: var(--muted); }
+  .stat .val { font-size: 26px; font-weight: 600; color: var(--strong); margin-top: 6px; letter-spacing: -.02em; }
+  .stat .val small { font-size: 15px; color: var(--dim); font-weight: 500; margin-left: 2px; }
+  .stat .hint { font-size: 12.5px; color: var(--dim); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  #row { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 18px; }
+  #graphcard { display: flex; flex-direction: column; height: 520px; }
+  #graphwrap { position: relative; flex: 1; min-height: 0; margin: 8px; border-radius: 8px; }
+  #graph { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .legend { display: flex; gap: 14px; font-size: 12.5px; color: var(--muted); margin-left: auto; }
+  .legend i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+  #err { position: absolute; inset: 0; display: none; place-items: center; text-align: center; padding: 40px; background: var(--card); z-index: 3; border-radius: 8px; }
+  .spin { width: 22px; height: 22px; margin: 0 auto 14px; border-radius: 50%; border: 2.5px solid var(--line-2); border-top-color: var(--accent); animation: rot .8s linear infinite; }
+  @keyframes rot { to { transform: rotate(360deg); } }
+  #sidecol { display: grid; gap: 18px; align-content: start; }
+
+  /* Plausible-style ranked list: bar behind the label, value on the right */
+  .list { padding: 12px 12px 14px; }
+  .lhead { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--dim); padding: 0 8px 6px; }
+  .li { position: relative; display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 10px; border-radius: 8px; cursor: pointer; }
+  .li:hover { background: #ffffff06; }
+  .li .fill { position: absolute; left: 0; top: 4px; bottom: 4px; border-radius: 6px; background: var(--accent-dim); transition: width .4s; }
+  .li.first .fill { background: var(--red-bg); }
+  .li.sel { box-shadow: inset 0 0 0 1px #7c7cf866; }
+  .li .rk { position: relative; width: 18px; color: var(--dim); font-size: 12.5px; }
+  .li .nm { position: relative; font-weight: 500; color: var(--strong); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .li .vl { position: relative; font-weight: 600; color: var(--text); }
+  .li.static { cursor: default; } .li.static:hover { background: none; }
+  .risk .fill { background: var(--cyan-bg); }
+  .detail { margin: 2px 10px 10px 38px; padding: 12px 14px; border-radius: 8px; background: var(--card-2); font-size: 13px; }
+  .detail .r { display: flex; gap: 12px; padding: 3px 0; } .detail .r > span:first-child { width: 96px; flex: none; color: var(--dim); }
+  .chip { display: inline-block; font-size: 12px; font-weight: 500; padding: 2px 9px; border-radius: 999px; margin: 0 5px 5px 0; background: var(--hover); color: var(--text); }
+  .chip.r { background: var(--red-bg); color: #fecaca; } .chip.c { background: var(--cyan-bg); color: #bae6fd; } .chip.a { background: var(--amber-bg); color: #fde68a; }
+  .empty { padding: 22px 12px; color: var(--muted); font-size: 13.5px; text-align: center; }
+  details.raw { margin: 0 20px 16px; } details.raw summary { cursor: pointer; color: var(--dim); font-size: 12.5px; }
+  details.raw pre { white-space: pre-wrap; margin: 8px 0 0; font: 12px/1.6 ui-monospace, Menlo, monospace; color: var(--muted); }
+
+  #tlcard .tlwrap { position: relative; height: 220px; margin: 6px 12px 14px; }
+  #tl { position: absolute; inset: 0; width: 100%; height: 100%; cursor: ew-resize; }
+  .keys { display: flex; gap: 16px; justify-content: center; color: var(--dim); font-size: 12.5px; padding-top: 4px; }
+  kbd { font: 11.5px var(--font); color: var(--muted); border: 1px solid var(--line-2); border-radius: 5px; padding: 1px 6px; background: var(--card); }
+
+  #tip { position: fixed; pointer-events: none; background: #27272a; border: 1px solid var(--line-2); border-radius: 8px; padding: 9px 12px;
+         font-size: 12.5px; line-height: 1.6; display: none; z-index: 20; color: var(--text); box-shadow: 0 8px 28px #000a; min-width: 160px; }
+  #tip b { color: var(--strong); display: block; margin-bottom: 2px; } #tip .tr { display: flex; justify-content: space-between; gap: 16px; } #tip .tr span:first-child { color: var(--dim); }
+
+  /* ---------- dialogs ---------- */
+  .scrim { position: fixed; inset: 0; background: #000000b0; display: none; place-items: start center; padding-top: 7vh; z-index: 10; backdrop-filter: blur(2px); }
+  .dlg { background: var(--card); border: 1px solid var(--line-2); border-radius: 16px; width: min(760px, 94vw); max-height: 86vh; display: flex; flex-direction: column; box-shadow: 0 24px 60px #000c; }
+  .dlg-h { display: flex; align-items: center; gap: 8px; padding: 18px 16px 0 22px; flex: none; }
+  .dlg-h h3 { margin: 0; font-size: 17px; font-weight: 650; color: var(--strong); }
+  .dlg-b { padding: 16px 22px 20px; overflow: auto; }
+  .dlg-f { display: flex; gap: 8px; align-items: center; padding: 14px 22px; border-top: 1px solid var(--line); flex: none; }
+  .x { width: 32px; height: 32px; border: 0; background: transparent; color: var(--muted); border-radius: 8px; cursor: pointer; font-size: 20px; line-height: 1; }
+  .x:hover { background: var(--hover); color: var(--text); }
+  .plist { display: grid; gap: 8px; }
+  .prow { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 13px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--card-2); }
+  .prow.act { border-color: #7c7cf866; }
+  .prow .nm { font-weight: 600; color: var(--strong); }
+  .prow .meta { font-size: 12.5px; color: var(--muted); margin-top: 2px; overflow-wrap: anywhere; } .prow .meta .bad { color: #fca5a5; }
+  .prow .acts { display: flex; gap: 6px; }
+  .badge { font-size: 11.5px; font-weight: 500; padding: 1px 8px; border-radius: 999px; background: var(--hover); color: var(--muted); margin-left: 8px; }
+  .badge.on { color: #c7d2fe; background: var(--accent-dim); }
+  .sub-h { font-size: 15px; font-weight: 600; color: var(--strong); margin: 24px 0 4px; }
+  .help { font-size: 13px; color: var(--muted); margin: 0 0 12px; line-height: 1.6; }
+  textarea, .in { width: 100%; background: var(--bg); border: 1px solid var(--line-2); border-radius: 10px; padding: 9px 12px; }
+  textarea { min-height: 100px; resize: vertical; font: 12px/1.5 ui-monospace, Menlo, monospace; }
+  textarea:focus, .in:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+  .in { height: 38px; }
+  .chg { font-size: 13px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+  .chg .act { font-size: 11.5px; font-weight: 600; padding: 1px 8px; border-radius: 999px; margin-right: 8px; }
+  .chg ul { margin: 4px 0 0 20px; padding: 0; color: var(--muted); font-size: 12.5px; }
+  .form { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; }
+  .form .full { grid-column: 1 / -1; }
+  .form label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; font-weight: 500; }
+  .res { display: flex; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+  table.eval { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  table.eval th, table.eval td { padding: 10px 12px; text-align: right; border-bottom: 1px solid var(--line); }
+  table.eval th { color: var(--dim); font-weight: 500; font-size: 12.5px; }
+  table.eval th:first-child, table.eval td:first-child { text-align: left; }
+  table.eval tr.prop td { color: #c7d2fe; font-weight: 600; }
+
+  .verdict { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .vchip { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 500; padding: 4px 10px; border-radius: 999px; background: var(--hover); color: var(--text); }
+  .vchip.ok { background: var(--green-bg); color: #bbf7d0; } .vchip.bad { background: var(--red-bg); color: #fecaca; } .vchip.key { background: var(--cyan-bg); color: #bae6fd; }
+  .btn.icon { width: 34px; padding: 0; justify-content: center; }
+  [hidden] { display: none !important; }
+  /* experiments page */
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+  .xcard { padding: 20px 22px; }
+  .xcard h3 { margin: 0 0 4px; font-size: 15px; font-weight: 600; color: var(--strong); }
+  .xcard .big { font-size: 30px; font-weight: 650; color: var(--strong); letter-spacing: -.02em; margin: 10px 0 2px; }
+  .xcard p { margin: 6px 0 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
+  .trust { display: inline-block; font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; margin-left: 6px; vertical-align: 2px; }
+  .trust.hi { background: var(--green-bg); color: #bbf7d0; } .trust.mid { background: var(--amber-bg); color: #fde68a; } .trust.lo { background: var(--red-bg); color: #fecaca; }
+  table.bt { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  table.bt th { text-align: right; font-weight: 500; font-size: 12.5px; color: var(--dim); padding: 10px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  table.bt td { text-align: right; padding: 11px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  table.bt th:first-child, table.bt td:first-child { text-align: left; }
+  table.bt tr.me td { color: var(--strong); font-weight: 600; } table.bt tr.grp td { color: var(--dim); font-size: 12px; padding-top: 16px; border-bottom: 0; }
+  table.bt .bar { display: inline-block; width: 90px; height: 6px; border-radius: 3px; background: var(--hover); vertical-align: middle; margin-right: 10px; overflow: hidden; }
+  table.bt .bar i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+  table.bt tr.me .bar i { background: var(--green); }
+  .ci { color: var(--dim); font-size: 12px; font-weight: 400; margin-left: 4px; }
+  .progress { height: 6px; background: var(--hover); border-radius: 3px; overflow: hidden; margin: 14px 0 6px; } .progress i { display: block; height: 100%; background: var(--accent); transition: width .3s; }
+  /* modes, systems row, purpose, four-step story */
+  .subnav { border-top: 1px solid var(--line); }
+  .subnav .in { height: 52px; }
+  .sysrow { display: flex; align-items: center; gap: 8px; overflow-x: auto; }
+  .sys { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--card);
+         cursor: pointer; white-space: nowrap; font-weight: 500; font-size: 13.5px; }
+  .sys:hover { background: var(--card-2); } .sys.on { background: var(--accent-dim); border-color: #7c7cf880; color: var(--strong); }
+  .sys .h { color: var(--dim); font-weight: 400; font-size: 12px; }
+  .purpose { margin: -6px 0 0; color: var(--muted); font-size: 14.5px; line-height: 1.6; max-width: 900px; }
+  .purpose b { color: var(--text); font-weight: 600; }
+  #story { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .step { padding: 20px 22px 18px; border-right: 1px solid var(--line); position: relative; min-width: 0; }
+  .step:last-child { border-right: 0; }
+  .step:not(:last-child)::after { content: ""; position: absolute; right: -7px; top: 24px; width: 12px; height: 12px; background: var(--card);
+         border-top: 1px solid var(--line); border-right: 1px solid var(--line); transform: rotate(45deg); z-index: 1; }
+  .sh { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--strong); }
+  .sh .n { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 11.5px; background: var(--accent-dim); color: #c7d2fe; }
+  .sh .q { font-weight: 400; color: var(--dim); margin-left: 2px; }
+  .sv { font-size: 22px; font-weight: 650; color: var(--strong); margin: 12px 0 4px; letter-spacing: -.015em; line-height: 1.2; word-break: break-word; }
+  .sv.quiet { color: var(--muted); font-weight: 600; } .sv.bad { color: #fca5a5; }
+  .sd { color: var(--muted); font-size: 13px; line-height: 1.5; }
+  .sd b { color: var(--text); font-weight: 600; }
+  .sc { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+  @media (max-width: 1180px) { #story { grid-template-columns: 1fr 1fr; } .step:nth-child(2) { border-right: 0; } .step:nth-child(-n+2) { border-bottom: 1px solid var(--line); } .step::after { display: none; } }
+  @media (max-width: 1180px) { #row { grid-template-columns: 1fr; } #hero { grid-template-columns: 1fr; } .answer { border-right: 0; border-bottom: 1px solid var(--line); } }
+  @media (max-width: 900px) { .projbtn .ph { display: none; } #evalbtn { display: none; } }
+  @media (max-width: 720px) { .stats { grid-template-columns: 1fr 1fr; } .stat:nth-child(2) { border-right: 0; } .stat:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+    nav .in, .page { padding-left: 16px; padding-right: 16px; } .projbtn .ph, #evalbtn { display: none; } }
+</style>
+</head>
+<body>
+
+<nav><div class="in">
+  <div class="logo"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="5" cy="11" r="3" fill="#7c7cf8"/><circle cx="17" cy="5" r="3" fill="#a1a1aa"/><circle cx="17" cy="17" r="3" fill="#f87171"/><path d="M7.6 9.6 14.4 6.3M7.6 12.4l6.8 3.3" stroke="#52525b" stroke-width="1.6" stroke-linecap="round"/></svg>rca-lab</div>
+  <div class="tabs" id="appmode"><button data-m="live" class="on">Live</button><button data-m="lab">Lab <span class="dim" style="font-weight:400">· testing &amp; experiments</span></button></div>
+  <div class="spacer"></div>
+  <span id="phase" class="status"><span class="dot"></span><span id="phasetxt">Loading</span></span>
+  <button class="btn primary" id="play" title="Space">▶&nbsp; Play</button>
+</div>
+<div class="subnav"><div class="in">
+  <div id="systems" class="sysrow"></div>
+  <div id="labtabs" class="tabs" hidden><button data-v="bench" class="on">Bench replay</button><button data-v="crash">Real crash</button><button data-v="results">Results</button><button data-v="demo">Toy demo</button></div>
+</div></div></nav>
+
+<div class="page" id="dash">
+  <div class="phead">
+    <div><h1 id="title">—</h1><div class="sub" id="sconn">—</div></div>
+    <div class="ctrls">
+      <span id="benchctl" style="display:contents">
+        <label class="pill-select" title="Each seed is a different random schedule of faults on the same healthy traffic. 3-22 are the report's judging seeds; 0-2 were used for tuning.">Seed <select id="seed"></select></label>
+        <label class="pill-select">Fault <select id="fault" style="max-width:260px"></select></label>
+        <button class="btn icon" id="prevf" title="Previous fault ([)">‹</button><button class="btn icon" id="nextf" title="Next fault (])">›</button>
+      </span>
+      <label class="pill-select" id="faultlbl">Inject fault in <select id="root"></select></label>
+      <label class="pill-select" id="methodlbl">Method <select id="method"><option value="core">report method</option><option>selftime</option><option>full</option><option>no_cascade</option><option>no_precedence</option>
+        <option>no_explained</option><option>pagerank</option><option>anomaly_only</option><option>earliest</option><option>random</option></select></label>
+      <label class="pill-select" id="zlbl" title="Alarm threshold (z)">Threshold <input id="z" type="range" min="2" max="8" step="0.5" value="3.5"><b id="zv">3.5</b></label>
+      <label class="pill-select" id="speedlbl">Speed <select id="speed"><option value="1">1×</option><option value="2" selected>2×</option><option value="4">4×</option><option value="8">8×</option><option value="16">16×</option><option value="32">32×</option></select></label>
+    </div>
+  </div>
+  <p class="purpose" id="purpose"></p>
+
+  <section class="card" id="story">
+    <div class="step"><div class="sh"><span class="n">1</span>Map<span class="q">who calls whom</span></div><div class="sv" id="map-v">—</div><div class="sd" id="map-d"></div><div class="sc" id="map-c"></div></div>
+    <div class="step"><div class="sh"><span class="n">2</span>Notice<span class="q">is something wrong?</span></div><div class="sv" id="notice-v">—</div><div class="sd" id="notice-d"></div><div class="sc" id="notice-c"></div></div>
+    <div class="step"><div class="sh"><span class="n">3</span>Blame<span class="q">which one broke first?</span></div><div class="sv" id="blame-v">—</div><div class="sd" id="blame-d"></div><div class="sc" id="blame-c"></div></div>
+    <div class="step"><div class="sh"><span class="n">4</span>Predict<span class="q">who breaks next?</span></div><div class="sv" id="predict-v">—</div><div class="sd" id="predict-d"></div><div class="sc" id="predict-c"></div></div>
+  </section>
+
+  <div id="row">
+    <section class="card" id="graphcard">
+      <div class="card-h"><h2>Service map</h2><span class="note">arrows point the way failure travels: from a callee to the services that call it</span>
+        <div class="legend"><span><i style="background:var(--green)"></i>Normal</span><span><i style="background:var(--amber)"></i>Deviating</span><span><i style="background:var(--red)"></i>Anomalous</span></div></div>
+      <div id="graphwrap"><canvas id="graph"></canvas><div id="err"></div></div>
+    </section>
+    <div id="sidecol">
+      <section class="card">
+        <div class="card-h"><h2>Suspects</h2><span class="note" id="mname"></span></div>
+        <div class="list"><div class="lhead"><span>Service</span><span>Score</span></div><div id="sus"></div></div>
+      </section>
+      <section class="card">
+        <div class="card-h"><h2>Who's affected next</h2><span class="note">cascade risk</span></div>
+        <div class="list risk"><div class="lhead"><span>Service</span><span>Risk</span></div><div id="risk"></div></div>
+        <details class="raw"><summary>Engine output</summary><pre id="explain"></pre></details>
+      </section>
+    </div>
+  </div>
+
+  <section class="card" id="tlcard">
+    <div class="card-h"><h2>Deviation over time</h2><span class="note">bright = far from that service's own normal · drag to look at any moment</span></div>
+    <div class="tlwrap" id="tlwrap"><canvas id="tl"></canvas></div>
+  </section>
+  <div class="keys" id="keys"></div>
+</div>
+
+<div class="page" id="exppage" hidden>
+  <div class="phead"><div><h1>Results</h1><div class="sub">How well each step works, recomputed in this lab from the same code and data as the report. Nothing here is typed in by hand.</div></div>
+    <div class="ctrls"><a class="btn" href="/report" target="_blank" rel="noopener">Open the full report ↗</a></div></div>
+  <section class="card">
+    <div class="card-h"><h2>Blame: 751 labelled faults on real traffic</h2><span class="note">seeds 3–22 · 77 healthy OTel minutes stretched to 10 h per seed · crash, hang, errors, slow</span></div>
+    <div style="padding:6px 22px 20px" id="benchbox"></div>
+  </section>
+  <div class="grid2" id="realbox"></div>
+</div>
+
+<button id="projbtn" hidden></button><span id="projdot" hidden></span><span id="projname" hidden></span><span id="projhost" hidden></span>
+<div id="tip"></div>
+
+<!-- evaluate -->
+<div class="scrim" id="modal"><div class="dlg"><div class="dlg-h"><h3>Method comparison</h3><span class="spacer"></span><button class="x" data-close="modal">×</button></div>
+  <div class="dlg-b" id="modalbody"></div></div></div>
+
+<!-- projects & hosts -->
+<div class="scrim" id="hosts"><div class="dlg">
+  <div class="dlg-h"><h3>Projects</h3><span class="spacer"></span>
+    <button class="btn sm" id="h_testall">Test all</button><button class="btn sm" id="h_new">New project</button><button class="x" data-close="hosts">×</button></div>
+  <div class="dlg-b">
+    <div class="plist" id="h_list"></div>
+    <div class="sub-h">Link EC2 instances</div>
+    <p class="help">Instance IPs change every time they restart. In the EC2 console, select your instances, copy the table and paste it here.
+      Matching projects are updated to the new IP; any other instance becomes a new project.</p>
+    <textarea id="h_paste" spellcheck="false" placeholder="sock-shop-major-project	i-0d699c5549e9386dc	Running	t3.micro	…	15.252.139.149	…	sock-shop-key"></textarea>
+    <div style="display:flex;gap:12px;align-items:center;margin-top:12px;flex-wrap:wrap">
+      <label class="pill-select" style="padding-right:4px">Key folder <input class="in" id="h_keydir" value="~/Downloads" style="width:180px;height:28px;border:0;background:transparent;padding:0 6px;box-shadow:none"></label>
+      <span class="dim" style="font-size:12.5px">key = folder / Key name.pem</span><span class="spacer"></span>
+      <button class="btn primary" id="h_import">Link instances</button></div>
+    <div id="h_res" style="margin-top:10px"></div>
+  </div>
+</div></div>
+
+<!-- project editor -->
+<div class="scrim" id="conn"><div class="dlg" style="width:min(640px,94vw)">
+  <div class="dlg-h"><h3 id="c_title">Project</h3><span class="spacer"></span><button class="x" id="c_x">×</button></div>
+  <div class="dlg-b">
+    <div class="form">
+      <div class="full"><label>Name</label><input class="in" id="c_name" placeholder="sock-shop"></div>
+      <div class="full"><label>Get telemetry from</label><div class="tabs" id="modeseg"><button data-v="tools">Jaeger / Prometheus</button><button data-v="ssh">SSH to the host</button><button data-v="both">Both</button></div></div>
+      <div id="g_tools" style="display:contents">
+        <div><label>Jaeger URL</label><input class="in" id="c_jaeger" placeholder="http://host:16686"></div>
+        <div><label>Prometheus URL <span class="dim">(optional)</span></label><input class="in" id="c_prom"></div>
+      </div>
+      <div id="g_ssh" style="display:contents">
+        <div><label>Host</label><input class="in" id="c_host" placeholder="IP or DNS"></div>
+        <div><label>User</label><input class="in" id="c_user" value="ubuntu"></div>
+        <div class="full"><label>Key file on this computer</label><input class="in" id="c_key" placeholder="~/Downloads/sock-shop-key.pem"></div>
+      </div>
+    </div>
+    <details style="margin-top:16px"><summary class="muted" style="cursor:pointer;font-size:13px">Advanced settings</summary>
+      <div class="form" style="margin-top:12px">
+        <div><label>Entry services (Jaeger)</label><input class="in" id="c_entry" placeholder="frontend"></div>
+        <div><label>Loki URL</label><input class="in" id="c_loki"></div>
+        <div><label>SSH port</label><input class="in" id="c_port" value="22"></div>
+        <div><label>Compose file on host</label><input class="in" id="c_compose" placeholder="/home/ubuntu/docker-compose.yml"></div>
+        <div><label>Services (empty = discover)</label><input class="in" id="c_services"></div>
+        <div><label>Window seconds / baseline minutes</label><div style="display:flex;gap:8px"><input class="in" id="c_step" value="15"><input class="in" id="c_base" value="10"></div></div>
+      </div></details>
+    <div id="c_res" style="margin-top:12px"></div>
+  </div>
+  <div class="dlg-f"><button class="btn primary" id="c_save">Save and test</button><button class="btn" id="c_close">Cancel</button>
+    <span id="c_msg" class="muted" style="font-size:13px"></span><span class="spacer"></span><button class="btn ghost" id="c_del" style="color:var(--red)">Delete</button></div>
+</div></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const S = { t: -1, T: 0, Ttot: 0, data: null, playing: false, busy: false, nodes: new Map(), links: [], ready: false, source: "bench", sel: null, jump: null };
+const REPLAY = () => S.source !== "live";
+const CORE = () => S.source !== "demo";
+let MODE = "live", LABTAB = "bench";
+const lerp = (a, b, k) => a + (b - a) * k;
+const mix = (c1, c2, k) => c1.map((v, i) => Math.round(lerp(v, c2[i], k)));
+const OK = [74, 222, 128], WARN = [251, 191, 36], BAD = [248, 113, 113];
+function zRGB(z, thr) { const k = Math.min(Math.max(z / thr, 0), 2); return k < 1 ? mix(OK, WARN, k) : mix(WARN, BAD, k - 1); }
+const rgb = (c, a = 1) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const FONT = "Inter, -apple-system, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif";
+const fmtDur = s => s < 60 ? Math.round(s) + "s" : Math.floor(s / 60) + "m " + String(Math.round(s % 60)).padStart(2, "0") + "s";
+const fmtX = z => z >= 50 ? "50×+" : z.toFixed(z < 10 ? 1 : 0) + "×";
+const CARD = "#18181b";
+
+/* ================= data ================= */
+function params() {
+  const m = S.source === "demo" ? ($("method").value === "core" ? "full" : $("method").value) : "core";
+  return new URLSearchParams({ source: S.source, root: $("root").value, method: m, z: $("z").value, hard: true, t: S.t, minutes: 20, seed: $("seed").value || 3 });
+}
+async function load() {
+  if (S.busy) return; S.busy = true;
+  if (!S.data) showLoading();
+  try {
+    const res = await fetch("/api/state?" + params()), d = await res.json();
+    if (d.error || !res.ok || !d.services) return showError(d.error || `HTTP ${res.status}: ${JSON.stringify(d.detail || d).slice(0, 200)}`);
+    $("err").style.display = "none"; S.data = d; S.T = d.T; S.t = (d.offset || 0) + d.t; S.Ttot = d.T_total ?? d.T;
+    if (S.jump && d.all_faults?.length) { const j = S.jump; S.jump = null; fillFaults(d.all_faults); if (j !== "keep") { setTimeout(() => jumpToFault(j === "first" ? (S.source === "bench" ? 1 : 0) : j)); return; } }
+    apply(d);
+  } catch (e) { showError(String(e)); } finally { S.busy = false; }
+}
+function showLoading() {
+  const live = S.source === "live";
+  const a = projState.projects.find(p => p.name === projState.active), slow = live && a && a.mode !== "ssh";
+  const what = live ? `Reading the last 20 minutes from ${esc(projState.active || "the project")}` : S.source === "bench" ? "Building the bench (real traffic + labelled faults) and scoring it" : S.source === "crash" ? "Scoring the real crash" : "Generating a synthetic run";
+  $("err").innerHTML = `<div><div class="spin"></div><div style="color:var(--strong);font-weight:500">${what} <span class="muted" id="loadsec"></span></div>
+    <div class="muted" style="font-size:13px;margin-top:4px">${live ? (slow ? "Traces come from Jaeger on the host; a busy host can take up to a minute the first time. Later refreshes only fetch new data." : "The first load reads every window. After that only new data is fetched.") : ""}</div></div>`;
+  S.loadT0 = Date.now();
+  $("err").style.display = "grid";
+  ["map", "notice", "blame", "predict"].forEach(k => { $(k + "-v").textContent = "…"; $(k + "-v").className = "sv quiet"; $(k + "-d").textContent = ""; $(k + "-c").innerHTML = ""; });
+  $("sus").innerHTML = `<div class="empty">Waiting for data…</div>`; $("risk").innerHTML = ""; $("explain").textContent = ""; setPhase("", "Loading");
+}
+function showError(msg) {
+  $("err").innerHTML = `<div style="max-width:480px"><div style="color:var(--strong);font-size:16px;font-weight:600;margin-bottom:6px">${S.source === "live" ? "Can't reach live telemetry" : "Could not load this view"}</div>
+    <div class="muted" style="font-size:13.5px">${esc(msg)}</div>${S.source === "live" ? '<div style="margin-top:16px"><button class="btn primary" onclick="openHosts()">Manage systems</button></div>' : ""}</div>`;
+  $("err").style.display = "grid"; setPlaying(false); setPhase("", "No data");
+}
+setInterval(() => { const el = $("loadsec"); if (el && $("err").style.display === "grid") el.textContent = Math.round((Date.now() - S.loadT0) / 1000) + "s"; }, 1000);
+function setPhase(cls, text, title = "") { $("phase").className = "status " + cls; $("phasetxt").textContent = text; $("phase").title = title; }
+
+function apply(d) {
+  const tlh = Math.min(300, Math.max(200, d.services.length * 14 + 50)) + "px";
+  if ($("tlwrap").style.height !== tlh) $("tlwrap").style.height = tlh;
+  if (!S.ready) initGraph(d);
+  d.nodes.forEach(n => Object.assign(S.nodes.get(n.id), { tz: n.z, trisk: n.risk, flag: n.flag, score: n.score }));
+  const key = e => e.source + ">" + e.target, old = new Map(S.links.map(l => [key(l.raw), l]));
+  S.links = d.edges.map(e => { const l = old.get(key(e)) || { s: S.nodes.get(e.source), t: S.nodes.get(e.target), w: 0 };
+                              l.raw = e; l.tw = e.p; l.hot = e.hot; return l; });
+  if (!d.suspects.some(s => s.service === S.sel)) S.sel = d.suspects[0]?.service ?? null;
+  renderStory(d); renderSide(d); renderStatus();
+  const inc = d.nodes.some(n => n.flag), past = !inc && d.suspects.length > 0;
+  if (d.t <= d.baseline) setPhase("", "Learning baseline");
+  else if (inc) setPhase("inc", "Incident in progress");
+  else if (past) setPhase("past", "Recovered", "Nothing is anomalous right now; the ranking explains an alarm earlier in the window.");
+  else setPhase("ok", "Healthy");
+  $("mname").textContent = d.method === "core" ? "report method" : $("method").value;
+}
+function startedText(s, d) {
+  return d.method === "core" ? `the alarm began ${fmtDur(Math.max(0, (d.offset || 0) + d.t + 1 - s.onset_window) * d.step_s)} ago`
+                             : `starting ${fmtDur(Math.max(0, s.onset_window - d.baseline) * d.step_s)} after the baseline`;
+}
+
+/* ================= hero, lists, header ================= */
+function onsetWindow(d) {
+  let first = null;
+  d.services.forEach((sv, i) => { const k = d.heat[i].findIndex((v, j) => j > d.baseline && v >= d.z_threshold);
+    if (k >= 0 && k <= d.t && (first == null || k < first)) first = k; });
+  return first;
+}
+const vchip = (cls, html) => `<span class="vchip ${cls}">${html}</span>`;
+function renderStory(d) {
+  const set = (k, v, desc, checks = "", cls = "") => { $(k + "-v").innerHTML = v; $(k + "-v").className = "sv " + cls; $(k + "-v").title = ""; $(k + "-d").innerHTML = desc; $(k + "-c").innerHTML = checks; };
+  const replay = REPLAY() && S.source !== "demo", tr = d.truth, step = d.step_s, now = (d.offset || 0) + d.t;
+  // 1 MAP: who calls whom (without links, blame cannot tell a cause from its victims)
+  const links = d.map ? d.map.links : d.edges.length, nsv = d.map ? d.map.services : d.services.length;
+  set("map", `${nsv} services`, `${links} call link${links === 1 ? "" : "s"} · ${esc(d.map ? d.map.source : "generated")}`,
+      links ? "" : vchip("bad", "no links: blame cannot separate causes from victims"), links ? "" : "quiet");
+  // 2 NOTICE: is anything abnormal for itself, with a known false-alarm rate?
+  const flagged = d.nodes.filter(n => n.flag), tau = (+d.z_threshold).toFixed(1);
+  const alarmOn = d.alarm !== undefined ? !!d.alarm : d.suspects.length > 0;
+  if (d.t <= d.baseline) set("notice", "Learning", "the first minutes teach each service what its own normal looks like", "", "quiet");
+  else if (alarmOn) {
+    const since = d.alarm ? ` ${fmtDur((now + 1 - d.alarm.start_abs) * step)} ago` : "";
+    let chk = "";
+    const lag = d.alarm ? d.alarm.start_abs - d.truth_a_abs : 0;          // in ticks; a fault that starts mid-tick shows up in that tick
+    if (replay && tr && d.alarm) chk = lag >= -1 ? vchip("ok", lag <= 0 ? "✓ in the same tick the fault began" : `✓ ${fmtDur(lag * step)} after the fault began`)
+                                                 : vchip("", "an earlier alarm was still open when this fault began");
+    else if (replay && !tr) chk = vchip("bad", "no fault here: a false alarm");
+    set("notice", flagged.length ? `Alarm · ${flagged.length} service${flagged.length > 1 ? "s" : ""}` : "Alarm, now clearing",
+        `raised${since} · threshold ${tau}, chosen so healthy traffic gives at most 2 false alarms an hour`, chk, flagged.length ? "bad" : "");
+  } else set("notice", "All quiet", `nothing stayed above the threshold (${tau}), which is chosen so healthy traffic gives at most 2 false alarms an hour`,
+             replay && tr ? vchip("bad", "✗ fault not noticed yet") : "", "quiet");
+  // 3 BLAME: the service that broke first, not the loudest victim
+  const s = d.suspects, top = s[0];
+  if (top) {
+    const why = top.note ? top.note.replace(" (hard evidence)", "").toLowerCase() : top.features[0] ? `${top.features[0].name.replace(/_/g, " ")} ${fmtX(top.features[0].z)} its normal spread` : "most abnormal";
+    const vict = top.impacted.length ? ` · explains ${top.impacted.length} caller${top.impacted.length > 1 ? "s'" : "'s"} symptoms` : "";
+    const lead = s[1] ? ` · ${Math.round(Math.max(0, 1 - s[1].score / top.score) * 100)}% ahead of ${esc(short(s[1].service))}` : "";
+    set("blame", esc(short(top.service)), `${esc(why)}${vict}${lead}`,
+        replay && tr ? (tr.rank_now === 1 ? vchip("ok", "✓ matches the answer key") : vchip("bad", `✗ answer key is ${esc(short(tr.root))}${tr.rank_now ? " (ranked #" + tr.rank_now + ")" : ""}`)) : "");
+    $("blame-v").title = top.service;
+  } else set("blame", "—", "a ranking runs only once an alarm is raised", replay && tr ? vchip("key", `answer key: ${esc(short(tr.root))} · ${esc(tr.kind)}`) : "", "quiet");
+  // 4 PREDICT: healthy services likely to be dragged down next
+  const pr = d.predict ?? d.nodes.filter(n => !n.flag && n.risk >= .15).sort((a, b) => b.risk - a.risk).slice(0, 3).map(n => ({ service: n.id, risk: n.risk, later: null }));
+  if (pr.length) {
+    const checked = pr.some(p => p.later != null);
+    set("predict", pr.slice(0, 2).map(p => `${esc(short(p.service))} <span class="dim" style="font-weight:500">${Math.round(p.risk * 100)}%</span>`).join("<br>"),
+        `healthy now, but they call a failing service${pr.length > 2 ? ` · also ${esc(short(pr[2].service))}` : ""}`,
+        checked ? pr.map(p => p.later ? vchip("ok", `✓ ${esc(short(p.service))} alarmed within ${fmtDur(d.horizon_s)}`) : vchip("", `${esc(short(p.service))} stayed healthy`)).join("")
+                : S.source === "live" ? vchip("", "watch these next") : "");
+  } else set("predict", "No spread expected", top ? "no healthy service calls the failing one" : "nothing is failing", "", "quiet");
+}
+function renderSide(d) {
+  $("sus").innerHTML = d.suspects.length ? d.suspects.map((s, i) => {
+    const row = `<div class="li ${i ? "" : "first"} ${s.service === S.sel ? "sel" : ""}" data-s="${esc(s.service)}">${s.rel >= .04 ? `<div class="fill" style="width:${(s.rel * 100).toFixed(0)}%"></div>` : ""}
+      <span class="rk">${i + 1}</span><span class="nm" title="${esc(s.service)}">${esc(short(s.service))}</span><span class="vl">${(s.rel * 100).toFixed(0)}%</span></div>`;
+    if (s.service !== S.sel) return row;
+    const core = s.own !== undefined;
+    return row + `<div class="detail">
+      <div class="r"><span>Started</span><span>${startedText(s, d).replace(/^the alarm began |^starting /, "")}</span></div>
+      ${core ? `<div class="r"><span>Own evidence</span><span>${s.own.toFixed(1)}</span></div>
+      <div class="r"><span>Symptoms</span><span>${s.symptoms.toFixed(1)} <span class="dim">· ${s.explained.toFixed(1)} explained by a broken callee</span></span></div>
+      ${s.note ? `<div class="r"><span>Why</span><span>${esc(s.note)}</span></div>` : ""}` : ""}
+      <div class="r"><span>Signals</span><span>${s.features.map(f => `<span class="chip r">${esc(f.name.replace(/_/g, " "))} ${fmtX(f.z)}</span>`).join("") || "—"}</span></div>
+      <div class="r"><span>${core ? "Victims" : "Knock-on"}</span><span>${s.impacted.map(x => `<span class="chip c">${esc(short(x.service))}${x.p == null ? "" : " " + Math.round(x.p * 100) + "%"}</span>`).join("") || '<span class="dim">none</span>'}</span></div>
+      <div class="r"><span>Raw score</span><span class="muted">${s.score.toFixed(2)}</span></div></div>`; }).join("")
+    : `<div class="empty">${d.t <= d.baseline ? "Learning normal behaviour…" : "No suspects in this window."}</div>`;
+  const flagged = new Set(d.nodes.filter(n => n.flag).map(n => n.id));
+  const risky = [...d.nodes].sort((a, b) => b.risk - a.risk).filter(n => n.risk > .02).slice(0, 7);
+  $("risk").innerHTML = risky.length ? risky.map(n => `<div class="li static">${n.risk >= .04 ? `<div class="fill" style="width:${n.risk * 100}%"></div>` : ""}
+      <span class="nm" title="${esc(n.id)}">${esc(short(n.id))}${!flagged.has(n.id) && n.risk > .3 ? ' <span class="chip a" style="margin:0 0 0 6px">at risk</span>' : ""}</span><span class="vl">${(n.risk * 100).toFixed(0)}%</span></div>`).join("")
+    : `<div class="empty">No spreading predicted.</div>`;
+  $("explain").textContent = d.explanation;
+}
+$("sus").onclick = e => { const r = e.target.closest(".li[data-s]"); if (!r || !S.data) return; S.sel = r.dataset.s === S.sel ? null : r.dataset.s; renderSide(S.data); };
+function renderStatus() {
+  const a = projState.projects.find(p => p.name === projState.active), d = S.data;
+  $("title").textContent = { demo: "Toy demo", bench: "Bench replay", crash: "Real crash replay" }[S.source] || (a ? a.name : "No system selected");
+  $("purpose").innerHTML = {
+    live: "Watches your running system with no labels and no training: it <b>notices</b> when a service stops behaving like itself, <b>blames</b> the one that broke first rather than the ones shouting loudest, and <b>predicts</b> which healthy services get dragged down next.",
+    bench: "The same four steps, tested on 77 minutes of real OpenTelemetry traffic with faults injected at known times. Each step is checked against the answer key, which the method never sees.",
+    crash: "A real failure on AWS: post-storage-service was stopped for 124 s while users were using the app. Each step is checked against what really happened.",
+    demo: "A toy generated shop. It only checks that the pipeline runs; it is not evidence." }[S.source];
+  const parts = { demo: ["Toy generated shop with one injected fault (a sanity check, not evidence)"],
+                  bench: [`Seed ${$("seed").value}`, "77 minutes of real OpenTelemetry traffic, stretched to 10 h", `${d?.all_faults?.length ?? "…"} faults in the answer key`],
+                  crash: ["DeathStarBench on AWS", "post-storage-service was stopped for 124 s", "SSH data only"] }[S.source]
+                || (a ? ["Live", a.summary, "last 20 minutes"] : ["Live", "no project selected"]);
+  if (d) parts.push(`${d.step_s}s ticks`, `threshold ${(+d.z_threshold).toFixed(2)}`);
+  $("sconn").textContent = parts.join(" · ");
+}
+
+/* ================= graph (canvas) ================= */
+const gc = $("graph"), g = gc.getContext("2d"); let W = 0, H = 0;
+const depth = {};
+function computeDepth(edges) {
+  // e.source = callee, e.target = caller. Depth = longest chain of callers above a service (entry points = 0).
+  // Relaxed iteratively and capped, like the notebook's layers(): real call graphs have cycles (user <-> social-graph).
+  for (const k in depth) delete depth[k];
+  const ids = [...new Set(edges.flatMap(e => [e.source, e.target]))], calls = {}, hasCaller = new Set(edges.map(e => e.source));
+  edges.forEach(e => (calls[e.target] ||= []).push(e.source));
+  const state = {}, dag = [];                                   // DFS from the entry points; a back edge closes a cycle and is skipped
+  const visit = u => { state[u] = 1; (calls[u] || []).forEach(v => { if (state[v] === 1) return; dag.push([u, v]); if (!state[v]) visit(v); }); state[u] = 2; };
+  ids.filter(id => !hasCaller.has(id)).concat(ids).forEach(id => { if (!state[id]) visit(id); });
+  ids.forEach(id => depth[id] = 0);
+  for (let k = 0; k < ids.length; k++) { let ch = false; dag.forEach(([u, v]) => { if (depth[v] < depth[u] + 1) { depth[v] = depth[u] + 1; ch = true; } }); if (!ch) break; }
+}
+const PAD_T = 30, PAD_B = 30;
+let GAP = 100, RS = 1;
+function layout() {
+  const maxD = Math.max(1, ...Object.values(depth)), by = {};
+  S.nodes.forEach(n => (by[depth[n.id] ?? 0] ||= []).push(n));
+  const avail = H - PAD_T - PAD_B, colW = (W - 200) / maxD;
+  if (Object.keys(by).length === 1) {               // no call graph (e.g. SSH-only): lay services out as an even grid
+    const ns = [...S.nodes.values()].sort((a, b) => a.id.localeCompare(b.id)), n = ns.length;
+    const cols = Math.max(1, Math.min(n, Math.round(Math.sqrt(n * (W - 120) / Math.max(avail, 1) * .8)))), rows = Math.ceil(n / cols);
+    GAP = avail / rows; RS = Math.min(1, Math.max(.55, (GAP - 32) / 48));
+    ns.forEach((nd, i) => { nd.tx = 60 + (W - 120) * ((i % cols) + .5) / cols; nd.ty = PAD_T + avail * (Math.floor(i / cols) + .5) / rows; });
+    return;
+  }
+  // A crowded column is split into 2-3 staggered lanes, so neighbours in the same lane sit k times further apart.
+  const lanes = ns => Math.min(3, Math.max(1, Math.ceil(76 / (avail / ns.length))));
+  GAP = Math.min(...Object.values(by).map(ns => lanes(ns) * avail / ns.length));
+  RS = Math.min(1, Math.max(.55, (GAP - 32) / 48));
+  Object.entries(by).forEach(([dep, ns]) => { ns.sort((a, b) => a.id.localeCompare(b.id));
+    const k = lanes(ns), laneW = Math.min(130, colW / (k + .3));
+    ns.forEach((n, i) => { n.tx = Math.min(W - 70, Math.max(70, 100 + colW * +dep + ((i % k) - (k - 1) / 2) * laneW));
+                           n.ty = PAD_T + avail * (i + .5) / ns.length; }); });
+}
+// Display names: drop the prefix every service shares ("shopflow-") and a compose replica suffix ("-1").
+let PREFIX = "";
+function computePrefix(names) {
+  if (names.length < 2) return "";
+  let p = names.reduce((a, b) => { let i = 0; while (i < a.length && a[i] === b[i]) i++; return a.slice(0, i); });
+  p = p.slice(0, Math.max(p.lastIndexOf("-"), p.lastIndexOf("_")) + 1);
+  return names.every(n => n.length > p.length + 2) ? p : "";
+}
+const short = id => id.slice(id.startsWith(PREFIX) ? PREFIX.length : 0).replace(/[-_]\d+$/, "");
+function initGraph(d) {
+  PREFIX = computePrefix(d.services);
+  computeDepth(d.edges);
+  d.nodes.forEach(n => S.nodes.set(n.id, { id: n.id, x: W / 2, y: H / 2, tx: 0, ty: 0, z: 0, tz: 0, risk: 0, trisk: 0, score: 0, flag: false }));
+  layout(); S.nodes.forEach(n => { n.x = n.tx; n.y = n.ty; }); S.ready = true;
+}
+const R = n => (17 + n.risk * 5) * RS;
+function fit(c) { const r = c.getBoundingClientRect(), dpr = devicePixelRatio || 1; c.width = r.width * dpr; c.height = r.height * dpr; return [r.width, r.height]; }
+function resize() { [W, H] = fit(gc); fit($("tl")); if (S.ready) layout(); }
+new ResizeObserver(resize).observe($("graphwrap")); new ResizeObserver(resize).observe($("tlwrap"));
+
+function badge(x, y, text, align = "center") {
+  g.font = `600 11px ${FONT}`; const w = g.measureText(text).width + 14, x0 = align === "left" ? x : x - w / 2;
+  g.fillStyle = "#f87171"; g.beginPath(); g.roundRect(x0, y - 9, w, 18, 9); g.fill();
+  g.fillStyle = "#1c0a0a"; g.textAlign = "left"; g.fillText(text, x0 + 7, y + 4);
+}
+function draw(ts) {
+  requestAnimationFrame(draw);
+  const dpr = devicePixelRatio || 1; g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
+  if (!S.data) return;
+  const thr = S.data.z_threshold, top = S.data.suspects[0]?.service;
+  S.nodes.forEach(n => { n.z = lerp(n.z, n.tz, .15); n.risk = lerp(n.risk, n.trisk, .15);
+    if (!n.pinned) { n.x = lerp(n.x, n.tx, .2); n.y = lerp(n.y, n.ty, .2); } });
+
+  for (const l of S.links) {                                         // ----- edges
+    l.w = lerp(l.w, l.tw, .12); const a = l.s, b = l.t; if (!a || !b) continue;
+    const nx = -(b.y - a.y), ny = b.x - a.x, L = Math.hypot(nx, ny) || 1, cx = (a.x + b.x) / 2 + nx / L * 16, cy = (a.y + b.y) / 2 + ny / L * 16;
+    const ep = (p, q, r) => { const dx = q[0] - p.x, dy = q[1] - p.y, d = Math.hypot(dx, dy) || 1; return [p.x + dx / d * r, p.y + dy / d * r]; };
+    const [x0, y0] = ep(a, [cx, cy], R(a) + 4), [x1, y1] = ep(b, [cx, cy], R(b) + 6);
+    const col = l.hot ? BAD : [161, 161, 170];
+    g.lineWidth = 1.2 + l.w * 4; g.lineCap = "round"; g.strokeStyle = rgb(col, l.hot ? .8 : .14 + l.w * .3);
+    g.beginPath(); g.moveTo(x0, y0); g.quadraticCurveTo(cx, cy, x1, y1); g.stroke();
+    const ang = Math.atan2(y1 - cy, x1 - cx); g.fillStyle = rgb(col, l.hot ? .85 : .4); g.beginPath(); g.moveTo(x1 + 2 * Math.cos(ang), y1 + 2 * Math.sin(ang));
+    g.lineTo(x1 - 8 * Math.cos(ang - .4), y1 - 8 * Math.sin(ang - .4)); g.lineTo(x1 - 8 * Math.cos(ang + .4), y1 - 8 * Math.sin(ang + .4)); g.fill();
+    if (l.hot) for (let i = 0; i < 3; i++) { const u = ((ts / 1500) + i / 3) % 1, q = 1 - u;
+      g.fillStyle = "#fee2e2"; g.beginPath(); g.arc(q * q * x0 + 2 * q * u * cx + u * u * x1, q * q * y0 + 2 * q * u * cy + u * u * y1, 2, 0, 7); g.fill(); }
+    if (l.hot || S.nodes.size <= 12) { g.font = `500 11px ${FONT}`; g.textAlign = "center"; const mx = (x0 + x1) / 4 + cx / 2, my = (y0 + y1) / 4 + cy / 2, txt = Math.round(l.tw * 100) + "%";
+      g.lineWidth = 4; g.strokeStyle = CARD; g.strokeText(txt, mx, my + 4); g.fillStyle = l.hot ? "#fca5a5" : "#71717a"; g.fillText(txt, mx, my + 4); }
+  }
+  S.nodes.forEach(n => {                                             // ----- nodes
+    const r = R(n), c = zRGB(n.z, thr), hot = n.z >= thr, sel = n.id === S.sel;
+    if (n.risk > .05) { g.fillStyle = `rgba(103,199,232,${.06 + n.risk * .14})`; g.beginPath(); g.arc(n.x, n.y, r + 8, 0, 7); g.fill(); }
+    g.fillStyle = rgb(c, hot ? .22 : .12); g.beginPath(); g.arc(n.x, n.y, r, 0, 7); g.fill();
+    g.lineWidth = hot ? 2.5 : 1.8; g.strokeStyle = rgb(c, hot ? 1 : .75); g.beginPath(); g.arc(n.x, n.y, r, 0, 7); g.stroke();
+    if (sel) { g.strokeStyle = "#a5b4fc"; g.lineWidth = 1.5; g.setLineDash([3, 3]); g.beginPath(); g.arc(n.x, n.y, r + 4, 0, 7); g.stroke(); g.setLineDash([]); }
+    g.fillStyle = hot ? "#fee2e2" : "#e4e4e7"; g.font = `600 ${r > 14 ? 12 : 10.5}px ${FONT}`; g.textAlign = "center";
+    g.fillText(n.z >= 50 ? "50+" : n.z.toFixed(n.z < 10 ? 1 : 0), n.x, n.y + 4);
+    const roomy = GAP - 2 * r > 48, lbl = n.risk > .05 && !roomy ? `${short(n.id)} · ${Math.round(n.risk * 100)}%` : short(n.id);
+    g.font = `500 ${RS < .8 ? 12 : 13}px ${FONT}`; g.lineWidth = 4; g.strokeStyle = CARD; g.strokeText(lbl, n.x, n.y + r + 17);
+    g.fillStyle = sel || hot ? "#fafafa" : "#d4d4d8"; g.fillText(lbl, n.x, n.y + r + 17);
+    if (n.risk > .05 && roomy) { g.font = `12px ${FONT}`; g.fillStyle = "#67c7e8"; g.fillText(Math.round(n.risk * 100) + "% risk", n.x, n.y + r + 32); }
+    if (n.id === top) roomy ? badge(n.x, n.y - r - 15, "Root cause") : badge(n.x + r + 8, n.y, "Root cause", "left");
+  });
+}
+
+let drag = null, moved = false;
+const gpos = e => { const r = gc.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+const hitN = (x, y) => [...S.nodes.values()].find(n => Math.hypot(n.x - x, n.y - y) < R(n) + 6);
+gc.addEventListener("mousedown", e => { const n = hitN(...gpos(e)); moved = false; if (n) { drag = n; n.pinned = true; } });
+gc.addEventListener("click", e => { const n = hitN(...gpos(e)); if (!moved && n && S.data?.suspects.some(s => s.service === n.id)) { S.sel = n.id; renderSide(S.data); } });
+addEventListener("mouseup", () => { drag = null; scrubbing = false; });
+gc.addEventListener("dblclick", () => S.nodes.forEach(n => n.pinned = false));
+const tipRows = rows => rows.map(([k, v]) => `<div class="tr"><span>${k}</span><span>${v}</span></div>`).join("");
+gc.addEventListener("mousemove", e => { const [x, y] = gpos(e); if (drag) { drag.x = x; drag.y = y; moved = true; }
+  const n = hitN(x, y); gc.style.cursor = n ? "pointer" : "default";
+  n ? tip(e, `<b>${esc(n.id)}</b>` + tipRows([["State", n.flag ? "Anomalous" : n.tz > S.data.z_threshold * .5 ? "Deviating" : "Normal"],
+          ["Deviation", n.tz.toFixed(1) + "σ"], ["Cascade risk", (n.trisk * 100).toFixed(0) + "%"], ["RCA score", n.score.toFixed(2)]])) : tip();
+});
+gc.addEventListener("mouseleave", () => tip());
+function tip(e, html) { const t = $("tip"); if (!html) { t.style.display = "none"; return; }
+  t.innerHTML = html; t.style.display = "block"; t.style.left = Math.min(e.clientX + 16, innerWidth - 220) + "px"; t.style.top = e.clientY + 16 + "px"; }
+
+/* ================= deviation timeline ================= */
+const tc = $("tl"), tg = tc.getContext("2d"); let tlGeom = null;
+function drawTimeline() {
+  requestAnimationFrame(drawTimeline);
+  const d = S.data, dpr = devicePixelRatio || 1, w = tc.width / dpr, h = tc.height / dpr; tg.setTransform(dpr, 0, 0, dpr, 0, 0); tg.clearRect(0, 0, w, h);
+  if (!d || w < 200 || h < 60) return;                 // hidden or not laid out yet
+  const left = 140, right = 8, top = 24, bottom = 26, rows = d.services.length, rh = (h - top - bottom) / rows, cw = (w - left - right) / d.T;
+  tlGeom = { left, top, cw, rh };
+  tg.fillStyle = "#7c7cf80d"; tg.beginPath(); tg.roundRect(left, top, d.baseline * cw, h - top - bottom, 6); tg.fill();
+  const fs = Math.max(9, Math.min(12.5, rh - 2)), every = rh < 9 ? 2 : 1;
+  d.services.forEach((sv, i) => {
+    if (i % every === 0) { tg.fillStyle = "#a1a1aa"; tg.font = `${fs}px ${FONT}`; tg.textAlign = "right"; let lb = short(sv); while (lb.length > 3 && tg.measureText(lb).width > left - 18) lb = lb.slice(0, -2) + "…";
+      tg.fillText(lb, left - 12, top + i * rh + rh / 2 + fs / 3); }
+    for (let j = 0; j < d.T; j++) { const z = d.heat[i][j], q = z / d.z_threshold;
+      if (q < .5) { tg.fillStyle = "#ffffff06"; } else tg.fillStyle = rgb(zRGB(z, d.z_threshold), Math.min(.3 + q * .35, .95));
+      const gap = cw > 5 ? 1.5 : cw > 2.5 ? .8 : 0;
+      tg.beginPath(); tg.roundRect(left + j * cw + gap / 2, top + i * rh + 1.5, Math.max(1, cw - gap), Math.max(1, rh - 3), Math.max(0, Math.min(2.5, cw / 3))); tg.fill(); } });
+  // time axis underneath, like a chart x-axis
+  const t0 = d.time - d.t * d.step_s, nt = Math.max(2, Math.floor((w - left - right) / 120));
+  tg.font = `12px ${FONT}`; tg.fillStyle = "#71717a"; tg.textAlign = "center";
+  for (let i = 0; i <= nt; i++) { const j = Math.round(i * (d.T - 1) / nt), x = left + (j + .5) * cw;
+    const lab = REPLAY() && S.source !== "demo" ? fmtDur(((d.offset || 0) + j) * d.step_s).replace(/ 00s$/, "").replace(/^(\d+)m (\d+)s$/, "$1m") : new Date((t0 + j * d.step_s) * 1000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    tg.fillText(lab, Math.max(left + 20, Math.min(x, w - 30)), h - 8); }
+  tg.textAlign = "left"; tg.font = `500 11.5px ${FONT}`;
+  if (d.baseline * cw > 90) { tg.fillStyle = "#a5b4fc"; tg.fillText("Learning baseline", left + 2, top - 9); }
+  if (d.onset != null) { const x = left + d.onset * cw; tg.fillStyle = "#fbbf24"; tg.fillRect(x - 1, top - 14, 2, h - top - bottom + 14); tg.fillText("Fault injected", x + 6, top - 9); }
+  (d.ledger || []).forEach(f => {                        // the answer key: what was broken, and when
+    const x0 = left + Math.max(f.a, 0) * cw, x1 = left + Math.min(f.b + 1, d.T) * cw; if (x1 <= x0) return;
+    tg.fillStyle = "#67c7e81a"; tg.fillRect(x0, top, x1 - x0, h - top - bottom);
+    const i = d.services.indexOf(f.root);
+    if (i >= 0) { tg.strokeStyle = "#67c7e8"; tg.lineWidth = 1.5; tg.strokeRect(x0, top + i * rh + .75, x1 - x0, rh - 1.5); }
+    tg.fillStyle = "#67c7e8"; tg.fillRect(x0, top - 14, 1.5, h - top - bottom + 14);
+    if (x1 - x0 > 4 || cw > 2) { tg.font = `500 11px ${FONT}`; tg.textAlign = "left"; const lb = `${f.kind} · ${short(f.root)}${f.rank ? " · #" + f.rank : ""}`; tg.fillText(lb, Math.min(x0 + 4, w - right - tg.measureText(lb).width), top - 9); }
+  });
+  const px = left + (d.t + .5) * cw;
+  tg.fillStyle = "#ffffff14"; tg.fillRect(px - cw / 2, top, cw, h - top - bottom); tg.fillStyle = "#fafafa"; tg.fillRect(px - 1, top, 2, h - top - bottom);
+  tg.beginPath(); tg.arc(px, top + 2, 4, 0, 7); tg.fill();
+}
+function tlAt(e) { const r = tc.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top, gm = tlGeom; if (!gm || !S.data) return null;
+  const j = Math.floor((x - gm.left) / gm.cw), i = Math.floor((y - gm.top) / gm.rh); return { j, i, ok: j >= 0 && j < S.T && i >= 0 && i < S.data.services.length }; }
+let scrubbing = false;
+function scrubTo(e) { const a = tlAt(e); if (!a) return; setPlaying(false); S.t = (S.data.offset || 0) + Math.min(Math.max(a.j, 0), S.T - 1); load(); }
+tc.addEventListener("mousedown", e => { scrubbing = true; scrubTo(e); });
+tc.addEventListener("mousemove", e => { if (scrubbing) scrubTo(e); const a = tlAt(e), d = S.data;
+  a?.ok ? tip(e, `<b>${esc(d.services[a.i])}</b>` + tipRows([["Time", REPLAY() && S.source !== "demo" ? fmtDur(((d.offset || 0) + a.j) * d.step_s) + " into the run" : new Date((d.time - (d.t - a.j) * d.step_s) * 1000).toLocaleTimeString()],
+          ["Deviation", d.heat[a.i][a.j].toFixed(1) + "σ"], ["Phase", a.j < d.baseline ? "Baseline" : "Judged"]])) : tip(); });
+tc.addEventListener("mouseleave", () => tip());
+
+/* ================= controls ================= */
+let timer = null;
+function setPlaying(on) {
+  S.playing = on; clearInterval(timer);
+  $("play").innerHTML = S.source === "live" ? (on ? "❚❚&nbsp; Pause updates" : "▶&nbsp; Resume updates") : (on ? "❚❚&nbsp; Pause" : "▶&nbsp; Play");
+  if (!on) return;
+  if (REPLAY() && S.t >= S.Ttot - 1) S.t = 0;
+  timer = setInterval(() => { if (REPLAY()) S.t = S.t + 1 >= S.Ttot ? 0 : S.t + 1; else S.t = -1; load(); },
+                      REPLAY() ? 450 / $("speed").value : 5000);
+}
+function step(k) { if (!S.data) return; setPlaying(false); S.t = Math.min(Math.max(S.t + k, 0), S.Ttot - 1); load(); }
+let FAULTS = [];
+function fillFaults(fs) {
+  FAULTS = fs;
+  $("fault").innerHTML = fs.map((f, i) => `<option value="${i}">#${i + 1} ${f.kind} · ${f.root} — ${f.rank === 1 ? "✓ #1" : "ranked #" + f.rank}</option>`).join("");
+}
+function jumpToFault(i) {
+  if (!FAULTS.length) return; i = (i + FAULTS.length) % FAULTS.length; const f = FAULTS[i];
+  $("fault").value = String(i); setPlaying(false); S.t = f.b + 2; load();           // just after the fault: the window the report judges
+}
+function currentFault() { let k = -1; FAULTS.forEach((f, i) => { if (f.a <= S.t) k = i; }); return k; }
+$("fault").onchange = () => jumpToFault(+$("fault").value);
+$("prevf").onclick = () => jumpToFault(currentFault() - (S.data?.truth ? 1 : 0));
+$("nextf").onclick = () => jumpToFault(currentFault() + 1);
+$("seed").innerHTML = Array.from({ length: 23 }, (_, k) => `<option value="${k}" ${k === 3 ? "selected" : ""}>${k}${k < 3 ? " (tuning)" : ""}</option>`).join("");
+$("seed").onchange = () => setSource("bench");
+$("play").onclick = () => setPlaying(!S.playing);
+$("speed").onchange = () => S.playing && setPlaying(true);
+$("root").onchange = load; $("method").onchange = () => { resetLive(); load(); };
+$("z").oninput = () => $("zv").textContent = $("z").value; $("z").onchange = load;
+function setSource(v) {
+  S.source = v;
+  if (v === "demo" && $("method").value === "core") $("method").value = "full";
+  $("faultlbl").hidden = v !== "demo"; $("benchctl").style.display = v === "bench" ? "contents" : "none";
+  $("methodlbl").hidden = v !== "demo"; $("method").querySelector('option[value="core"]').disabled = v === "demo";
+  $("zlbl").hidden = v !== "demo"; $("speedlbl").hidden = v === "live";
+  resetLive(); setPlaying(false); FAULTS = []; S.jump = v === "bench" || v === "crash" ? "first" : null; renderHosts(); renderStatus(); renderKeys(); load();
+}
+function showResults(on) { $("dash").hidden = on; $("exppage").hidden = !on; $("play").hidden = on; $("phase").hidden = on; scrollTo(0, 0); if (on) loadExperiments(); else resize(); }
+function paintMode() {
+  document.querySelectorAll("#appmode button").forEach(b => b.classList.toggle("on", b.dataset.m === MODE));
+  document.querySelectorAll("#labtabs button").forEach(b => b.classList.toggle("on", b.dataset.v === LABTAB));
+  $("systems").hidden = MODE !== "live"; $("labtabs").hidden = MODE !== "lab";
+}
+function setMode(m) {
+  if (m === "lab") return openLab(LABTAB);
+  MODE = "live"; paintMode(); showResults(false); setSource("live"); setPlaying(true);
+}
+function openLab(tab) {
+  MODE = "lab"; LABTAB = tab; paintMode();
+  if (tab === "results") { setPlaying(false); showResults(true); return; }
+  showResults(false); setSource(tab);
+}
+function renderKeys() {
+  $("keys").innerHTML = (S.source === "live"
+    ? ["<kbd>Space</kbd> pause / resume updates", "<kbd>P</kbd> manage systems", "<kbd>L</kbd> go to Lab"]
+    : ["<kbd>Space</kbd> play / pause", "<kbd>←</kbd> <kbd>→</kbd> step", ...(S.source === "bench" ? ["<kbd>[</kbd> <kbd>]</kbd> previous / next fault"] : []), "<kbd>L</kbd> go to Live"])
+    .map(k => `<span>${k}</span>`).join("");
+}
+document.querySelectorAll("#appmode button").forEach(b => b.onclick = () => setMode(b.dataset.m));
+document.querySelectorAll("#labtabs button").forEach(b => b.onclick = () => openLab(b.dataset.v));
+$("systems").onclick = e => { const b = e.target.closest("button"); if (!b) return; if (b.id === "managebtn") openHosts(); else if (b.dataset.p) useProject(b.dataset.p); };
+document.querySelectorAll("[data-close]").forEach(b => b.onclick = () => $(b.dataset.close).style.display = "none");
+document.querySelectorAll(".scrim").forEach(m => m.addEventListener("mousedown", e => { if (e.target === m) m.style.display = "none"; }));
+addEventListener("keydown", e => {
+  if (e.key === "Escape") return document.querySelectorAll(".scrim").forEach(m => m.style.display = "none");
+  if (e.target.closest("input, textarea, select") || e.metaKey || e.ctrlKey || e.altKey) return;
+  if ([...document.querySelectorAll(".scrim")].some(m => m.style.display === "grid")) return;
+  if (e.key === " ") { e.preventDefault(); setPlaying(!S.playing); }
+  else if (e.key === "ArrowLeft") step(-1); else if (e.key === "ArrowRight") step(1);
+  else if (e.key === "p" || e.key === "P") openHosts();
+  else if (e.key === "]" && S.source === "bench") $("nextf").click(); else if (e.key === "[" && S.source === "bench") $("prevf").click();
+  else if (e.key === "l" || e.key === "L") setMode(MODE === "live" ? "lab" : "live");
+});
+
+async function synthEval() {
+  $("modal").style.display = "grid"; $("modalbody").innerHTML = `<div class="muted" style="text-align:center;padding:20px"><div class="spin"></div>Running 10 runs × 8 methods…</div>`;
+  const r = await (await fetch("/api/eval?source=" + S.source)).json();
+  if (r.error || !r.metrics) { $("modalbody").innerHTML = `<div class="muted">${esc(r.error || "No runs to evaluate yet.")}</div>`; return; }
+  const f = (m, k) => `${m[k].mean.toFixed(2)} <span class="dim" style="font-size:12px">${m[k].ci95[0].toFixed(2)}–${m[k].ci95[1].toFixed(2)}</span>`;
+  const rows = Object.entries(r.metrics).map(([name, m]) => { const c = r.proposed_vs_others[name];
+    return `<tr class="${name === "full" ? "prop" : ""}"><td>${esc(name)}</td><td>${f(m, "A@1")}</td><td>${f(m, "A@3")}</td><td>${f(m, "MRR")}</td>
+      <td>${c ? c.p_holm.toFixed(3) : "—"}</td><td>${c ? c.cliffs_delta.toFixed(2) : "—"}</td></tr>`; }).join("");
+  $("modalbody").innerHTML = `<p class="help">${r.n_runs} runs · ${S.source === "demo" ? "synthetic sanity check, not evidence" : "live fault-injection runs"} · 95% bootstrap intervals · Holm-corrected Wilcoxon against <b>full</b></p>
+    <table class="eval"><tr><th>Method</th><th>Top-1 accuracy</th><th>Top-3 accuracy</th><th>MRR</th><th>p (Holm)</th><th>Cliff's δ</th></tr>${rows}</table>
+    <p class="help" style="margin-top:14px">From the command line: <code>python -m rcalab evaluate</code> writes results/&lt;run&gt;/ (summary.json, per_run.csv, table.tex)</p>`; }
+
+/* ================= experiments page ================= */
+const pct = v => v == null || isNaN(v) ? "—" : (v * 100).toFixed(1) + "%";
+let benchPoll = null;
+async function loadExperiments() {
+  renderBench(await (await fetch("/api/bench/eval")).json());
+  const x = await (await fetch("/api/experiments")).json(), c = x.crash, pz = x.pause, fa = x.false_alarms;
+  $("realbox").innerHTML = `
+    <section class="card xcard"><h3>Real crash on AWS <span class="trust mid">n = 1</span></h3>
+      <div class="big">#${c.rank} of ${c.of}</div><div class="muted">${esc(short2(c.service))} stopped for ${c.seconds} s · ${c.false_flags_before} false flags before the fault</div>
+      <p>${esc(c.note)}.</p><div style="margin-top:14px"><button class="btn primary" onclick="openLab('crash')">Replay it</button></div></section>
+    ${pz ? `<section class="card xcard"><h3>Live freeze (docker pause) <span class="trust lo">detected, not localised</span></h3>
+      <div class="big">#${pz.after_fixes?.["post-storage-service"]?.rank ?? "—"} and #${pz.after_fixes?.["user-timeline-service"]?.rank ?? "—"}</div>
+      <div class="muted">${pz.faults.map(f => `${esc(short2(f.service))} paused ${f.seconds} s (${Math.round(f.user_error_rate * 100)}% of user requests failed)`).join(" · ")}</div>
+      <p>Both frozen services were flagged with ${pz.after_fixes?.false_alarms_per_h_healthy ?? 0} false alarms per hour, but ranked 7th and 8th of 27: the whole call chain above a frozen service stalls the same way. ${esc(pz.after_fixes?.caveat || "")}.</p></section>` : ""}
+    ${fa ? `<section class="card xcard"><h3>False alarms on real healthy traffic <span class="trust hi">measured</span></h3>
+      <div class="big">${Math.round(fa.before)}/h → ${fa.after}/h</div><div class="muted">${(fa.hours * 60).toFixed(0)} min of healthy OpenTelemetry traffic</div>
+      <p>The old detector (robust z 3.5) against the calibrated one, whose threshold is chosen from a false-alarm budget instead of guessed.</p></section>` : ""}
+    <section class="card xcard"><h3>Toy demo check <span class="trust lo">not evidence</span></h3>
+      <p>The generated shop on the Demo tab encodes the method's own assumptions, so it only checks that the pipeline runs.</p>
+      <div style="margin-top:14px"><button class="btn" onclick="synthEval()">Run the demo comparison</button></div></section>`;
+}
+const short2 = s => s.replace(/^socialnetwork-/, "").replace(/-\d+$/, "");
+function renderBench(j) {
+  const box = $("benchbox");
+  if (j.error) { box.innerHTML = `<p style="color:#fca5a5">${esc(j.error)}</p>`; return; }
+  if (!j.rows && !j.running) {
+    box.innerHTML = `<p class="help" style="margin-top:8px">Recompute the report's main table here: every method and ablation on the ${j.seeds.length} judging seeds (${j.seeds[0]}–${j.seeds[j.seeds.length - 1]}), using the same code as the report. Takes about a minute.</p>
+      <button class="btn primary" id="benchgo">Recompute the table</button> <button class="btn" onclick="openLab('bench')">Watch the bench replay</button>`;
+    $("benchgo").onclick = async () => { renderBench(await (await fetch("/api/bench/eval?start=true")).json()); };
+    return;
+  }
+  if (j.running) {
+    box.innerHTML = `<div class="progress"><i style="width:${(100 * j.done / Math.max(j.total, 1)).toFixed(0)}%"></i></div><div class="muted" style="font-size:13px">Scoring ${j.done} of ${j.total} seed × method runs…</div>`;
+    clearTimeout(benchPoll); benchPoll = setTimeout(async () => { if (!$("exppage").hidden) renderBench(await (await fetch("/api/bench/eval")).json()); }, 1200);
+    return;
+  }
+  const groups = [["Methods", r => !r.variant.startsWith("no ")], ["Ablations: switch one step off", r => r.variant.startsWith("no ")]];
+  const body = groups.map(([g, f]) => `<tr class="grp"><td colspan="9">${g}</td></tr>` + j.rows.filter(f).map(r => `<tr class="${r.variant.startsWith("ours") ? "me" : ""}">
+      <td>${esc(r.variant)}<div class="dim" style="font-weight:400;font-size:12px">${esc(r.why)}</div></td>
+      <td><span class="bar"><i style="width:${r.A1 * 100}%"></i></span>${pct(r.A1)}<span class="ci">${pct(r.A1_ci[0])}–${pct(r.A1_ci[1])}</span></td>
+      <td>${pct(r.A3)}</td><td>${r.MRR.toFixed(2)}</td><td>${pct(r.A1_crash)}</td><td>${pct(r.A1_hang)}</td><td>${pct(r.A1_errors)}</td><td>${pct(r.A1_slow)}</td><td>${r.false_alarms_h.toFixed(2)}</td></tr>`).join("")).join("");
+  box.innerHTML = `<div style="overflow-x:auto"><table class="bt"><tr><th>Method</th><th>Root first (A@1) · 95% CI</th><th>Top 3</th><th>MRR</th><th>Crash</th><th>Hang</th><th>Errors</th><th>Slow</th><th>False alarms / h</th></tr>${body}</table></div>
+    <p class="help" style="margin-top:14px">${j.rows[0].faults} faults on seeds ${j.seeds[0]}–${j.seeds[j.seeds.length - 1]}. CI = seed-cluster bootstrap (faults in one seed share the same background traffic). The accuracies of the report method and its ablations match the report to the decimal (the confidence intervals can differ in the last digit, because the bootstrap is drawn afresh);
+      "most abnormal" reads 70.3% here against 70.6% in the report, and false alarms are averaged per seed here (the report pools them, 0.15/h). The PageRank, N-Sigma and BARO baselines appear only in the report: their code is not in this checkout.</p>
+    <button class="btn" onclick="openLab('bench')">Watch the bench replay</button>`;
+}
+
+/* ================= projects ================= */
+let connMode = "tools", editing = "", projState = { active: null, projects: [] };
+const status = {};                                    // project -> { state: ok | bad | wait, detail }
+function setConnMode(m) { connMode = m; document.querySelectorAll("#modeseg button").forEach(b => b.classList.toggle("on", b.dataset.v === m));
+  $("g_tools").style.display = m === "ssh" ? "none" : "contents"; $("g_ssh").style.display = m === "tools" ? "none" : "contents"; }
+document.querySelectorAll("#modeseg button").forEach(b => b.onclick = () => setConnMode(b.dataset.v));
+
+async function refreshProjects() {
+  projState = await (await fetch("/api/projects")).json();
+  const a = projState.projects.find(p => p.name === projState.active), st = a && status[a.name];
+  $("systems").innerHTML = projState.projects.map(p => { const q = status[p.name];
+      return `<button class="sys ${p.name === projState.active ? "on" : ""}" data-p="${esc(p.name)}" title="${esc(q?.detail || p.summary)}"><span class="dot ${q ? q.state : ""}"></span>${esc(p.name)}</button>`; }).join("")
+    + `<button class="btn sm ghost" id="managebtn">${projState.projects.length ? "Manage systems" : "Add a system"}</button>`;
+  renderHosts(); renderStatus();
+}
+function renderHosts() {
+  if ($("hosts").style.display !== "grid") return;
+  $("h_list").innerHTML = projState.projects.length ? projState.projects.map(p => { const st = status[p.name] || {}, on = p.name === projState.active, inUse = on && S.source === "live";
+    const warn = p.missing.length ? `<span class="bad">missing ${esc(p.missing.join(", "))}</span>` : p.sampler_error ? `<span class="bad">${esc(p.sampler_error)}</span>` : "";
+    return `<div class="prow ${on ? "act" : ""}"><span class="dot ${st.state || ""}"></span>
+      <div style="min-width:0"><div><span class="nm">${esc(p.name)}</span><span class="badge">${esc(p.mode)}</span>${on ? '<span class="badge on">active</span>' : ""}</div>
+        <div class="meta">${esc(p.summary)}${warn ? " · " + warn : ""}${st.detail ? ` · <span class="${st.state === "bad" ? "bad" : ""}">${esc(st.detail)}</span>` : ""}</div></div>
+      <div class="acts"><button class="btn sm ghost" data-a="test" data-p="${esc(p.name)}">Test</button><button class="btn sm ghost" data-a="edit" data-p="${esc(p.name)}">Edit</button>
+        <button class="btn sm ${inUse ? "" : "primary"}" data-a="use" data-p="${esc(p.name)}" ${inUse ? "disabled" : ""}>${inUse ? "Viewing" : "Open"}</button></div></div>`; }).join("")
+    : `<div class="empty">No projects yet. Paste your EC2 instances below, or create one with New project.</div>`;
+}
+async function testProject(name) {
+  status[name] = { state: "wait", detail: "testing…" }; refreshProjects();
+  try {
+    const t = await (await fetch("/api/projects/" + encodeURIComponent(name) + "/test", { method: "POST" })).json();
+    const rs = t.results || [], ok = rs.length && rs.every(x => x.ok);
+    status[name] = { state: ok ? "ok" : "bad", detail: t.error || rs.map(x => `${x.source}: ${x.detail}`).join(" · ") || "nothing to test" };
+  } catch (e) { status[name] = { state: "bad", detail: String(e) }; }
+  refreshProjects();
+}
+async function useProject(name) {
+  await fetch("/api/projects/" + encodeURIComponent(name) + "/select", { method: "POST" }); await refreshProjects(); $("hosts").style.display = "none";
+  if (MODE !== "live") setMode("live"); else { resetLive(); load(); setPlaying(true); }
+  if (!status[name]) testProject(name);
+}
+function openHosts() { $("hosts").style.display = "grid"; renderHosts(); }
+$("projbtn").onclick = openHosts;
+$("h_new").onclick = () => { $("hosts").style.display = "none"; openConn(); };
+$("h_testall").onclick = () => projState.projects.forEach(p => testProject(p.name));
+$("h_list").onclick = e => { const b = e.target.closest("button[data-a]"); if (!b) return; const n = b.dataset.p;
+  if (b.dataset.a === "test") testProject(n); else if (b.dataset.a === "use") useProject(n); else { $("hosts").style.display = "none"; openConn(n); } };
+$("h_import").onclick = async () => {
+  const text = $("h_paste").value.trim(); if (!text) { $("h_res").innerHTML = '<div class="muted" style="font-size:13px">Paste the instance rows first.</div>'; return; }
+  $("h_import").disabled = true; $("h_res").innerHTML = '<div class="muted" style="font-size:13px">Linking…</div>';
+  try {
+    const r = await (await fetch("/api/projects/import-ec2", { method: "POST", headers: { "Content-Type": "application/json" },
+                                                               body: JSON.stringify({ text, key_dir: $("h_keydir").value }) })).json();
+    if (r.error) { $("h_res").innerHTML = `<div style="color:#fca5a5;font-size:13px">${esc(r.error)}</div>`; return; }
+    const col = { created: "background:var(--green-bg);color:#bbf7d0", updated: "background:var(--accent-dim);color:#c7d2fe", skipped: "background:var(--amber-bg);color:#fde68a" };
+    $("h_res").innerHTML = r.instances.map(x => `<div class="chg"><span class="act" style="${col[x.action]}">${x.action}</span><b style="color:var(--strong);font-weight:600">${esc(x.project || x.instance)}</b>
+      <span class="muted" style="margin-left:6px">${esc(x.ip || "")}${x.state && x.state !== "running" ? " · " + esc(x.state) : ""}</span>
+      ${x.changes.length ? `<ul>${x.changes.map(c => `<li>${esc(c)}</li>`).join("")}</ul>` : x.action === "updated" ? ' <span class="dim">· already up to date</span>' : ""}
+      ${x.note ? `<div style="color:var(--amber);margin-top:3px">${esc(x.note)}</div>` : ""}</div>`).join("");
+    await refreshProjects();
+    r.instances.filter(x => x.project && x.action !== "skipped").forEach(x => testProject(x.project));
+    if (r.instances.some(x => x.project === projState.active && x.changes.length)) { resetLive(); if (S.source === "live") load(); }
+  } catch (e) { $("h_res").innerHTML = `<div style="color:#fca5a5">${esc(e)}</div>`; }
+  finally { $("h_import").disabled = false; }
+};
+
+async function openConn(name) {                       // name = existing project to edit, falsy = new project
+  editing = name || ""; $("conn").style.display = "grid"; $("c_res").innerHTML = ""; $("c_msg").textContent = "";
+  $("c_title").textContent = name ? `Edit ${name}` : "New project"; $("c_del").style.display = name ? "" : "none";
+  const f = name ? await (await fetch("/api/projects/" + encodeURIComponent(name))).json()
+                 : { mode: "tools", system_name: "", jaeger_url: "", prometheus_url: "", ssh_host: "", ssh_user: "ubuntu", ssh_key_path: "",
+                     jaeger_entry: "", loki_url: "", ssh_port: 22, ssh_compose_file: "", services: "", step_seconds: 15, baseline_minutes: 10, missing: [] };
+  setConnMode(f.mode); $("c_name").value = f.system_name; $("c_jaeger").value = f.jaeger_url; $("c_prom").value = f.prometheus_url;
+  $("c_host").value = f.ssh_host; $("c_user").value = f.ssh_user; $("c_key").value = f.ssh_key_path; $("c_entry").value = f.jaeger_entry;
+  $("c_loki").value = f.loki_url; $("c_port").value = f.ssh_port; $("c_compose").value = f.ssh_compose_file; $("c_services").value = f.services;
+  $("c_step").value = f.step_seconds; $("c_base").value = f.baseline_minutes;
+  if (f.missing && f.missing.length) $("c_msg").textContent = "Still needed: " + f.missing.join(", ");
+}
+function resetLive() { S.t = -1; S.nodes.clear(); S.ready = false; S.links = []; S.data = null; S.sel = null; }
+const closeConn = () => { $("conn").style.display = "none"; openHosts(); };
+$("c_close").onclick = closeConn; $("c_x").onclick = closeConn;
+$("c_save").onclick = async () => {
+  $("c_msg").textContent = "Saving…";
+  const body = { original_name: editing, mode: connMode, system_name: $("c_name").value, jaeger_url: $("c_jaeger").value, jaeger_entry: $("c_entry").value,
+    prometheus_url: $("c_prom").value, loki_url: $("c_loki").value, ssh_host: $("c_host").value, ssh_user: $("c_user").value, ssh_port: +$("c_port").value || 22,
+    ssh_key_path: $("c_key").value, ssh_compose_file: $("c_compose").value, services: $("c_services").value,
+    step_seconds: +$("c_step").value || 15, baseline_minutes: +$("c_base").value || 10 };
+  const r = await (await fetch("/api/projects", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })).json();
+  if (r.error) { $("c_msg").textContent = r.error; return; }
+  editing = r.name; await refreshProjects();
+  $("c_msg").textContent = r.missing.length ? "Saved. Still needed: " + r.missing.join(", ") : "Saved. Testing…";
+  const t = await (await fetch("/api/projects/" + encodeURIComponent(r.name) + "/test", { method: "POST" })).json();
+  const rs = t.results || [];
+  $("c_res").innerHTML = rs.map(x => `<div class="res"><span class="dot ${x.ok ? "ok" : "bad"}"></span><b style="font-weight:600">${esc(x.source)}</b><span class="muted">${esc(x.detail)}</span><span class="dim" style="margin-left:auto">${x.ms} ms</span></div>`).join("");
+  status[r.name] = { state: rs.length && rs.every(x => x.ok) ? "ok" : "bad", detail: rs.map(x => `${x.source}: ${x.detail}`).join(" · ") }; refreshProjects();
+  if (rs.length && rs.every(x => x.ok)) { $("c_msg").textContent = "Connected."; setMode("live"); }
+};
+$("c_del").onclick = async () => { if (!confirm("Delete project '" + editing + "'?")) return;
+  await fetch("/api/projects/" + encodeURIComponent(editing), { method: "DELETE" }); $("conn").style.display = "none"; await refreshProjects(); resetLive(); if (S.source === "live") load(); };
+
+(async () => {
+  const m = await (await fetch("/api/meta")).json();
+  $("root").innerHTML = m.demo_services.map(s => `<option ${s === "cart-db" ? "selected" : ""}>${s}</option>`).join("");
+  $("z").value = m.z; $("zv").textContent = m.z; await refreshProjects(); projState.projects.forEach(p => testProject(p.name));
+  resize(); requestAnimationFrame(draw); requestAnimationFrame(drawTimeline); setMode("live");
+})();
+</script>
+</body>
+</html>

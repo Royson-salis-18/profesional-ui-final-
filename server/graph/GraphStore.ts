@@ -423,7 +423,7 @@ export class GraphStore {
    * disk. Missing file (no models trained yet) is not an error — just no
    * scores to attach. */
   private readAnomalyScores(): Record<string, any> {
-    const scoresPath = path.resolve(process.cwd(), '..', 'ml', 'data', 'latest_scores.json');
+    const scoresPath = path.resolve(process.cwd(), '..', 'core', 'ml', 'data', 'latest_scores.json');
     try {
       const stat = fs.statSync(scoresPath);
       if (this.anomalyScoresCache?.mtimeMs === stat.mtimeMs) {

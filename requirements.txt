@@ -1,0 +1,7 @@
+# Python dependencies for core/ (the analysis core). The anomaly-model pipeline in core/ml has its own, see core/ml/requirements.txt.
+numpy>=1.23
+pandas>=1.5
+pyyaml>=6.0
+fastapi>=0.110
+uvicorn>=0.27
+pytest>=7.4
